@@ -27,7 +27,27 @@
 
 resource "azurerm_resource_group" "rg-atomic-red-team" {
   name                         = "rg-atomic-red-teaming"
-  location                     = "West Europe"
+  location                     = "Australia East"
+  
+  tags = {
+    modules                    = "atomic-red-team"
+    author                     = "Sacha Roussakis-Notter (DFW1N)"
+    repo                       = "https://github.com/DFW1N/terraform-azure-atomic-red-team"
+    assessment                 = "red-teaming-activity"
+  }
+}
+
+#####################
+## Storage Account ##
+#####################
+
+resource "azurerm_storage_account" "atomic-sa" {
+  depends_on                   = [random_string.random-atomic-strings]
+  name                         = "atomicsa${random_string.random-atomic-strings.result}"
+  resource_group_name          = azurerm_resource_group.rg-atomic-red-team.name
+  location                     = azurerm_resource_group.rg-atomic-red-team.location
+  account_tier                 = "Standard"
+  account_replication_type     = "GRS"
   
   tags = {
     modules                    = "atomic-red-team"
@@ -147,3 +167,8 @@ resource "azurerm_network_interface" "atomic-nic-pip" {
     assessment                 = "red-teaming-activity"
   }
 }
+
+#############################
+## Windows Virtual Machine ##
+#############################
+
