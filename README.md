@@ -2,7 +2,7 @@
 ---
 Module used for using Terraform to build and deploy a windows environment that creates a virtual machine and installs and executes atomic red team commands to mimic red teaming.
 
-# Example Usage
+# Module Usage
 ---
 
     module "atomic" {
@@ -10,7 +10,18 @@ Module used for using Terraform to build and deploy a windows environment that c
       version = "1.0.1"
     }
 
+# Module Usage
+---
+
+    module "atomic" {
+      source  = "app.terraform.io/DFW1N/atomic/azurerm"
+      version = "1.0.1"
+      admin_password = "yourstring"
+      admin_password = "yourstring"
+    }
+
 ## Arguments
+---
 | Name | Type | Required | Description |
 | --- | --- | --- | --- |
 | `is_custom_image` | `bool` | true | Defaults to `false`. Defines whether a custom image is to be used to deploy the VM or not. | 
