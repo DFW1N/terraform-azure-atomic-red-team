@@ -15,7 +15,7 @@
 #                                                █▄       █████▄███▄▄██▀███      ▐▓
 #                                               ▀ ▀▀▀▀▄▄▄▐████████████████▄██▌▄▄▄
 #                                                       ▀████▀▀▀▄ ▄  ▀████ ██▀█▀▀     Project:          Azure Terraform Atomic Red Team
-#                                                        ▀ ▄▄██▀█▀▀▀███▄ ▀            Creator:          Sacha Roussakis-Notter
+#                                                        ▀ ▄▄██▀█▀▀▀███▄ ▀            Creator:          Sacha Roussakis-Notter (DFW1N)
 #                                                       ▄▄▀▀             ▄            Creation Date:    Friday, November 7th 2021, 10:16 pm
 #
 #                                           ██╗    ██╗██╗████████╗██╗  ██╗██╗███╗   ██╗
