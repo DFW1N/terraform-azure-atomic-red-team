@@ -18,6 +18,7 @@
 #                                             Project:          Azure Terraform Atomic Red Team                                        #
 #                                             Creator:          Sacha Roussakis-Notter (DFW1N)                                         #
 #                                             Creation Date:    Sunday, November 7th 2021, 10:16 pm                                    #
+#                                             ManagedBy:        Sacha Roussakis-Notter (DFW1N)                                         #
 #                                                                                                                                      #
 ########################################################################################################################################
 
@@ -64,17 +65,11 @@ resource "azurerm_storage_account" "atomic-sa" {
 
 resource "azurerm_virtual_network" "atomic-vnet" {
   depends_on                   = [azurerm_network_security_group.atomic-nsg]
-  name                         = "virtualNetwork1"
+  name                         = "atomic-virtual-network"
   location                     = azurerm_resource_group.rg-atomic-red-team.location
   resource_group_name          = azurerm_resource_group.rg-atomic-red-team.name
   address_space                = ["10.0.0.0/16"]
-  dns_servers                  = ["10.0.0.4", "10.0.0.5"]
-
-  subnet {
-    name                       = "atomic-snet"
-    address_prefix                      = "10.0.3.0/24"
-    security_group             = azurerm_network_security_group.atomic-nsg.id
-  }
+  dns_servers                  = ["8.8.8.8", "8.8.4.4"]
 
   tags = {
     modules                    = "atomic-red-team"
@@ -82,6 +77,26 @@ resource "azurerm_virtual_network" "atomic-vnet" {
     repo                       = "https://github.com/DFW1N/terraform-azure-atomic-red-team"
     assessment                 = "red-teaming-activity"
   }
+}
+
+####################
+## Network Subnet ##
+####################
+
+resource "azurerm_subnet" "atomic-snet" {
+  name                 = "atomic-snet"
+  resource_group_name  = azurerm_resource_group.rg-atomic-red-team.name
+  virtual_network_name = azurerm_virtual_network.atomic-vnet.name
+  address_prefixes     = ["10.0.1.0/24"]
+  }
+
+################################
+## Network Subnet Association ##
+################################
+
+resource "azurerm_subnet_network_security_group_association" "atomic-snet-association" {
+  subnet_id                 = azurerm_subnet.atomic-snet.id
+  network_security_group_id = azurerm_network_security_group.atomic-nsg.id
 }
 
 ############################
@@ -94,14 +109,14 @@ resource "azurerm_network_security_group" "atomic-nsg" {
   resource_group_name          = azurerm_resource_group.rg-atomic-red-team.name
   
   security_rule {
-    name                       = "AtomicAllowAll"
-    priority                   = 100
+    name                       = "Allow_RDP_Atomic"
+    priority                   = 300
     direction                  = "Inbound"
     access                     = "Allow"
-    protocol                   = "*"
-    source_port_range          = "*"
-    destination_port_range     = "*"
-    source_address_prefix      = "*"
+    protocol                   = "TCP"
+    source_port_range          = "3389"
+    destination_port_range     = "0.0.0.0/0"
+    source_address_prefix      = "0.0.0.0/0"
     destination_address_prefix = "*"
   }
 
@@ -174,19 +189,24 @@ resource "azurerm_network_interface" "atomic-nic-interface" {
 #############################
 
 resource "azurerm_windows_virtual_machine" "atomic-windows-vm" {
-  name                = "atomic-winsvr10-vm"
+  name                = "atomic-win-vm"
   resource_group_name = azurerm_resource_group.rg-atomic-red-team.name
   location            = azurerm_resource_group.rg-atomic-red-team.location
   size                = "Standard_F2"
   admin_username      = "adminuser"
-  admin_password      = "P@$$w0rd1234!"
+  admin_password      = "Pgknqjkglerlk2346236%@#$@F"
   network_interface_ids = [
     azurerm_network_interface.atomic-nic-interface.id,
   ]
 
   os_disk {
+    name                 = "atomic-win-vm-osdisk" 
     caching              = "ReadWrite"
     storage_account_type = "Standard_LRS"
+  }
+
+  boot_diagnostics {
+    storage_account_uri   = azurerm_storage_account.atomic-sa.primary_blob_endpoint
   }
 
   source_image_reference {
@@ -203,3 +223,29 @@ resource "azurerm_windows_virtual_machine" "atomic-windows-vm" {
     assessment                 = "red-teaming-activity"
   }
 }
+
+##############################
+# VIRTUAL MACHINE EXTENSTION #
+##############################
+
+resource "azurerm_virtual_machine_extension" "Atomic-Win-Extenstion" {
+  name                 = "Azure_Choco_Install_Extension"
+  virtual_machine_id   = azurerm_windows_virtual_machine.atomic-windows-vm.id
+  publisher            = "Microsoft.Compute"
+  type                 = "CustomScriptExtension"
+  type_handler_version = "1.9"
+
+  protected_settings = <<SETTINGS
+  {
+    "commandToExecute": "powershell -command \"[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('${base64encode(data.template_file.tf.rendered)}')) | Out-File -filepath install.ps1\" && powershell -ExecutionPolicy Unrestricted -File install.ps1"
+  }
+  SETTINGS
+}
+
+#####################
+# POWERSHELL SCRIPT #
+#####################
+
+data "template_file" "tf" {
+    template = "${file("${path.module}/install.ps1")}"
+} 
