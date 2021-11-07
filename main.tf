@@ -195,4 +195,11 @@ resource "azurerm_windows_virtual_machine" "atomic-windows-vm" {
     sku       = "2019-Datacenter"
     version   = "latest"
   }
+  
+  tags = {
+    modules                    = "atomic-red-team"
+    author                     = "Sacha Roussakis-Notter (DFW1N)"
+    repo                       = "https://github.com/DFW1N/terraform-azure-atomic-red-team"
+    assessment                 = "red-teaming-activity"
+  }
 }
