@@ -48,6 +48,7 @@ resource "azurerm_storage_account" "atomic-sa" {
   location                     = azurerm_resource_group.rg-atomic-red-team.location
   account_tier                 = "Standard"
   account_replication_type     = "GRS"
+  min_tls_version              = "TLS1_2" 
   
   tags = {
     modules                    = "atomic-red-team"
@@ -147,7 +148,7 @@ resource "random_string" "random-atomic-strings" {
 ## Virtual Machine Network Interface ##
 #######################################
 
-resource "azurerm_network_interface" "atomic-nic-pip" {
+resource "azurerm_network_interface" "atomic-nic-interface" {
   depends_on                   = [azurerm_public_ip.atomic-pip]
   name                         = "atomic-win-${random_string.random-atomic-strings.result}-vm-nic"
   resource_group_name          = azurerm_resource_group.rg-atomic-red-team.name
@@ -155,9 +156,9 @@ resource "azurerm_network_interface" "atomic-nic-pip" {
 
   ip_configuration {
     name                          = "primary"
-    subnet_id                     = azurerm_subnet.internal.id
+    subnet_id                     = azurerm_subnet.atomic-snet.id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = azurerm_public_ip.pip.id
+    public_ip_address_id          = azurerm_public_ip.atomic-pip.id
   }
 
   tags = {
@@ -172,3 +173,26 @@ resource "azurerm_network_interface" "atomic-nic-pip" {
 ## Windows Virtual Machine ##
 #############################
 
+resource "azurerm_windows_virtual_machine" "atomic-windows-vm" {
+  name                = "atomic-winsvr10-vm"
+  resource_group_name = azurerm_resource_group.rg-atomic-red-team.name
+  location            = azurerm_resource_group.rg-atomic-red-team.location
+  size                = "Standard_F2"
+  admin_username      = "adminuser"
+  admin_password      = "P@$$w0rd1234!"
+  network_interface_ids = [
+    azurerm_network_interface.atomic-nic-interface.id,
+  ]
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
+
+  source_image_reference {
+    publisher = "MicrosoftWindowsServer"
+    offer     = "WindowsServer"
+    sku       = "2019-Datacenter"
+    version   = "latest"
+  }
+}
