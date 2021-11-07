@@ -10,7 +10,7 @@ Module used for using Terraform to build and deploy a windows environment that c
       version = "1.0.1"
     }
 
-# Module Usage
+# Usage Example
 ---
 
     module "atomic" {
